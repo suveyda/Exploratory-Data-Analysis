@@ -1,0 +1,135 @@
+---
+title: "Course_Project_2"
+author: "suveyda"
+date: "January 20, 2017"
+output: html_document
+---
+
+# Course Project 2
+
+## Exploratory Data Analysis by Johns Hopkins University
+
+### Introduction
+
+The overall goal of this course project is to explore the National Emissions Inventory database and see what it say about fine particulate matter pollution in the United states over the 10-year period 1999-2008. 
+
+Fine particulate matter (PM2.5) is an ambient air pollutant for which there is strong evidence that it is harmful to human health. In the United States, the Environmental Protection Agency (EPA) is tasked with setting national ambient air quality standards for fine PM and for tracking the emissions of this pollutant into the atmosphere. Approximately every 3 years, the EPA releases its database on emissions of PM2.5. This database is known as the National Emissions Inventory (NEI).
+
+For each year and for each type of PM source, the NEI records how many tons of PM2.5 were emitted from that source over the course of the entire year. The data that we will use for this assignment are for 1999, 2002, 2005, and 2008.
+
+### Data
+
+The data for this project contains two files:
+
+**PM2.5 Emissions Data (summarySCC_PM25.rds):** This file contains a data frame with all of the PM2.5 emissions data for 1999, 2002, 2005, and 2008. For each year, the table contains number of tons of PM2.5 emitted from a specific type of source for the entire year. Here are the column names for this data:
+
+* fips: A five-digit number (represented as a string) indicating the U.S. county
+* SCC: The name of the source as indicated by a digit string
+* Pollutant: A string indicating the pollutant
+* Emissions: Amount of PM2.5 emitted, in tons
+* type: The type of source (point, non-point, on-road, or non-road)
+* year: The year of emissions recorded
+
+**Source Classification Code Table (Source_Classification_Code.rds):** This table provides a mapping from the SCC digit strings in the Emissions table to the actual name of the PM2.5 source. The sources are categorized in a few different ways from more general to more specific.
+
+First of all, we read the given input files to R:
+
+```{r}
+NEI <- readRDS("summarySCC_PM25.rds")
+SCC <- readRDS("Source_Classification_Code.rds")
+```
+
+Then we load the ggplot2:
+```{r}
+library("ggplot2")
+```
+
+### Question 1
+Have total emissions from PM2.5 decreased in the United States from 1999 to 2008? 
+
+```{r}
+totals.by.year <- with(NEI, aggregate(Emissions, by = list(year), sum))
+names(totals.by.year) <- c("Year", "Total")
+
+#png("plot1.png")
+plot(totals.by.year, main = expression("Total PM"[2.5]*" Emissions From All Sources"), xlab = "Year", ylab = expression("Total PM"[2.5]*" Emissions (in tons)"), type = "o", xaxt = "n", pch = 19, lty = 6)
+axis(1, at = totals.by.year$Year, labels=totals.by.year$Year)
+#dev.off()
+```
+
+### Question 2
+
+Have total emissions from PM2.5 decreased in the Baltimore City, Maryland (fips == "24510") from 1999 to 2008?
+
+```{r}
+baltimore.NEI <- subset(NEI, fips == "24510")
+baltimore.totals <- with(baltimore.NEI, aggregate(Emissions, by = list(year), sum))
+names(baltimore.totals) <- c("Year", "Total")
+
+#png("plot2.png")
+plot(baltimore.totals, main = expression("Baltimore City Total PM"[2.5]*" Emissions"), xlab = "Year", ylab = expression("Total PM"[2.5]*" Emissions (in tons)"), type = "o", xaxt = "n", pch = 19, lty = 6)
+axis(1, at = baltimore.totals$Year, labels=baltimore.totals$Year)
+#dev.off()
+```
+
+### Question 3
+
+Of the four types of sources indicated by the type (point, nonpoint, onroad, nonroad) variable, which of these four sources have seen decreases in emissions from 1999-2008 for Baltimore City? Which have seen increases in emissions from 1999-2008?
+
+```{r}
+baltimore.totals2 <- with(baltimore.NEI, aggregate(Emissions, by = list(type, year), sum))
+names(baltimore.totals2) <- c("Type", "Year", "Total")
+
+#png("plot3.png")
+plot3 <- qplot(Year, Total, data = baltimore.totals2, color = Type, geom = "line") + ggtitle(expression("Baltimore City Total PM"[2.5]*" Emissions by Types")) + theme(plot.title = element_text(hjust = 0.5)) + xlab("Year") + ylab(expression("Total PM"[2.5]*" Emissions (in tons)"))
+plot3
+#dev.off()
+```
+
+### Question 4
+
+Across the United States, how have emissions from coal combustion-related sources changed from 1999-2008?
+
+```{r}
+SCC.coal <- SCC[grep("[Cc]oal", SCC$Short.Name), ]
+NEI.coal <- subset(NEI, NEI$SCC %in% SCC.coal$SCC)
+coal.totals <- with(NEI.coal, aggregate(Emissions, by = list(year), sum))
+names(coal.totals) <- c("Year", "Total")
+
+#png("plot4.png")
+plot(coal.totals, main = expression("Total Coal Combustion-Related PM"[2.5]*" Emissions"), xlab = "Year", ylab = expression("Total PM"[2.5]*" Emissions (in tons)"), type = "o", xaxt = "n", pch = 19, lty = 6)
+axis(1, at = coal.totals$Year, labels=coal.totals$Year)
+#dev.off()
+```
+
+### Question 5
+
+How have emissions from motor vehicle sources changed from 1999-2008 in Baltimore City?
+
+```{r}
+baltimore.onroad <- subset(baltimore.totals2, Type == "ON-ROAD")
+
+#png("plot5.png")
+plot5 <- qplot(Year, Total, data = baltimore.onroad, geom = "line") + ggtitle(expression("Baltimore City Total PM"[2.5]*" Emissions from Motor Vehicles")) + theme(plot.title = element_text(hjust = 0.5)) + xlab("Year") + ylab(expression("Total PM"[2.5]*" Emissions (in tons)"))
+plot5
+#dev.off()
+```
+
+### Question 6
+
+Compare emissions from motor vehicle sources in Baltimore City with emissions from motor vehicle sources in Los Angeles County, California (fips == "06037"). Which city has seen greater changes over time in motor vehicle emissions?
+
+```{r}
+losangeles.NEI <- subset(NEI, fips == "06037")
+losangeles.totals2 <- with(losangeles.NEI, aggregate(Emissions, by = list(type, year), sum))
+names(losangeles.totals2) <- c("Type", "Year", "Total")
+losangeles.onroad <- subset(losangeles.totals2, Type == "ON-ROAD")
+baltimore.onroad$city <- rep("Baltimore", 4)
+losangeles.onroad$city <- rep("Los Angeles", 4)
+onroad <- rbind(baltimore.onroad, losangeles.onroad)
+
+#png("plot6.png")
+plot6 <- qplot(Year, Total, data = onroad, color = city, geom = "line") + ggtitle(expression("Total PM"[2.5]*" Emissions from Motor Vehicle Sources")) + theme(plot.title = element_text(hjust = 0.5)) + xlab("Year") + ylab(expression("Total PM"[2.5]*" Emissions (in tons)"))
+plot6
+#dev.off()
+```
