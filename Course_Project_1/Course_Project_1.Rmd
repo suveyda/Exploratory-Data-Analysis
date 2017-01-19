@@ -1,0 +1,108 @@
+---
+title: "Course_Project_1"
+author: "suveyda"
+date: "January 20, 2017"
+output: html_document
+---
+
+# Course Project 1
+
+## Exploratory Data Analysis by Johns Hopkins University
+
+### Introduction
+
+In this course project our overall goal is to examine how household energy usage varies over a 2-day period in February, 2007. Our task is to reconstruct the given plots using the base plotting system.
+
+### Data
+
+This assignment uses data from the UC Irvine Machine Learning Repository, a popular repository for machine learning datasets. In particular, we will be using the "Individual household electric power consumption Data Set" which is available on the course web site.
+
+The given dataset contains measurements of electric power consumption in one household with a one-minute sampling rate over a period of almost 4 years. Different electrical quantities and some sub-metering values are available.
+The following descriptions of the 9 variables in the dataset are taken from the UCI web site:
+
+* Date: Date in format dd/mm/yyyy
+* Time: time in format hh:mm:ss
+* Global_active_power: household global minute-averaged active power (in kilowatt)
+* Global_reactive_power: household global minute-averaged reactive power (in kilowatt)
+* Voltage: minute-averaged voltage (in volt)
+* Global_intensity: household global minute-averaged current intensity (in ampere)
+* Sub_metering_1: energy sub-metering No. 1 (in watt-hour of active energy). It corresponds to the kitchen, containing mainly a dishwasher, an oven and a microwave (hot plates are not electric but gas powered).
+* Sub_metering_2: energy sub-metering No. 2 (in watt-hour of active energy). It corresponds to the laundry room, containing a washing-machine, a tumble-drier, a refrigerator and a light.
+* Sub_metering_3: energy sub-metering No. 3 (in watt-hour of active energy). It corresponds to an electric water-heater and an air-conditioner.
+
+Let's first load the dataset into R:
+
+```{r}
+data <- read.table("household_power_consumption.txt", header = TRUE, sep = ";", stringsAsFactors=FALSE)
+```
+
+As recommended in the project, we convert the Date and Time variables to Date/Time classes in R using the strptime()  and as.Date() functions. Furthermore, since we will only be using data from the dates 2007-02-01 and 2007-02-02, we create a subset of the data below.
+
+```{r}
+data$Date_Time <- paste(data$Date, data$Time)
+data$Date_Time <- strptime(data$Date_Time, "%d/%m/%Y %H:%M:%S")
+
+data$Date <- as.Date(data$Date, "%d/%m/%Y")
+days <- as.Date(c("2007-02-01", "2007-02-02"))
+sub.data <- subset(data, Date >= days[1] & Date <= days[2])
+```
+
+### Plot 1
+
+```{r}
+#png("plot1.png", width=480, height=480)
+hist(as.numeric(sub.data$Global_active_power), 
+	main = "Global Active Power", 
+	xlab = "Global Active Power (kilowatts)",
+	ylim = c(0,1200), col = "red")
+#dev.off()
+```
+
+### Plot 2
+
+```{r}
+#png("plot2.png", width=480, height=480)
+plot(sub.data$Date_Time, sub.data$Global_active_power, type = "l",
+	xlab = "", ylab = "Global Active Power (kilowatts)")
+#dev.off()
+```
+
+### Plot 3
+
+```{r}
+#png("plot3.png", width=480, height=480)
+plot(sub.data$Date_Time, as.numeric(sub.data$Sub_metering_1), 
+	xlab = "", ylab = "Energy sub metering", type = "n")
+lines(sub.data$Date_Time, as.numeric(sub.data$Sub_metering_1), col = "black")
+lines(sub.data$Date_Time, as.numeric(sub.data$Sub_metering_2), col = "red")
+lines(sub.data$Date_Time, sub.data$Sub_metering_3, col = "blue")
+legend("topright", lty = 1, col = c("black", "red", "blue"), 
+	legend = c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3"))
+#dev.off()
+```
+
+### Plot 4
+
+```{r}
+#png("plot4.png", width=480, height=480)
+par(mfrow=c(2,2))
+
+with(sub.data, {
+	plot(Date_Time, Global_active_power, type = "l", 
+	  xlab = "", ylab = "Global Active Power")
+	
+	plot(Date_Time, Voltage, type = "l", xlab = "datetime", ylab = "Voltage")
+
+	plot(sub.data$Date_Time, as.numeric(sub.data$Sub_metering_1), 
+		xlab = "", ylab = "Energy sub metering", type = "n")
+	lines(sub.data$Date_Time, as.numeric(sub.data$Sub_metering_1), col = "black")
+	lines(sub.data$Date_Time, as.numeric(sub.data$Sub_metering_2), col = "red")
+	lines(sub.data$Date_Time, sub.data$Sub_metering_3, col = "blue")
+	legend("topright", lty = 1, cex = 0.8, col = c("black", "red", "blue"),
+		legend = c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3"))
+
+	plot(Date_Time, Global_reactive_power,  type = "l",
+	     xlab = "datetime", ylab="Global_reactive_power")
+})
+#dev.off()
+```
